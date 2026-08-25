@@ -30,6 +30,7 @@ jobs:
       - name: Configure npm for GitHub Packages
         run: |
           echo "@wyre-ai:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "@wyre-technology:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
       - name: Install dependencies
@@ -51,6 +52,7 @@ jobs:
         run: |
           {
             echo "@wyre-ai:registry=https://npm.pkg.github.com"
+            echo "@wyre-technology:registry=https://npm.pkg.github.com"
             echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}"
           } > /tmp/npmrc.docker
 
@@ -74,6 +76,7 @@ jobs:
       - name: Configure npm for GitHub Packages
         run: |
           echo "@wyre-ai:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "@wyre-technology:registry=https://npm.pkg.github.com" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
       - name: Install dependencies

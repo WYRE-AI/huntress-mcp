@@ -8,7 +8,7 @@ import { createServer } from '../server.js';
 // yields the VALUE undefined — so the server emitted
 // {type: 'text', text: undefined}, which fails MCP client Zod validation
 // (invalid_union on content[0]) on every call.
-vi.mock('@wyre-ai/node-huntress', () => ({
+vi.mock('@wyre-technology/node-huntress', () => ({
   HuntressClient: class {
     accounts = { get: vi.fn().mockResolvedValue(undefined) };
     actor = { get: vi.fn().mockResolvedValue(undefined) };

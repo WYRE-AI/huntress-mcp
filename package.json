@@ -34,7 +34,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "@wyre-ai/node-huntress": "^1.0.4"
+    "@wyre-technology/node-huntress": "^1.0.4"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
