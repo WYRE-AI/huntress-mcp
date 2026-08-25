@@ -1,18 +1,18 @@
 # Huntress MCP Server
 
-[![Build Status](https://github.com/wyre-technology/huntress-mcp/actions/workflows/release.yml/badge.svg)](https://github.com/wyre-technology/huntress-mcp/actions/workflows/release.yml)
+[![Build Status](https://github.com/WYRE-AI/huntress-mcp/actions/workflows/release.yml/badge.svg)](https://github.com/WYRE-AI/huntress-mcp/actions/workflows/release.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)](https://nodejs.org/)
 
 A [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that provides AI assistants with structured access to [Huntress](https://www.huntress.com) cybersecurity platform data and operations.
 
-> **Note:** This project is maintained by [Wyre Technology](https://github.com/wyre-technology).
+> **Note:** This project is maintained by [Wyre Technology](https://github.com/WYRE-AI).
 
 ## Quick Start
 
 **Claude Desktop** — download, open, done:
 
-1. Download `huntress-mcp.mcpb` from the [latest release](https://github.com/wyre-technology/huntress-mcp/releases/latest)
+1. Download `huntress-mcp.mcpb` from the [latest release](https://github.com/WYRE-AI/huntress-mcp/releases/latest)
 2. Open the file (double-click or drag into Claude Desktop)
 3. Enter your Huntress credentials when prompted (API Key, API Secret)
 
@@ -24,7 +24,7 @@ No terminal, no JSON editing, no Node.js install required.
 claude mcp add huntress-mcp \
   -e HUNTRESS_API_KEY=your-api-key \
   -e HUNTRESS_API_SECRET=your-api-secret \
-  -- npx -y github:wyre-technology/huntress-mcp
+  -- npx -y github:WYRE-AI/huntress-mcp
 ```
 
 See [Installation](#installation) for Docker and from-source methods.
@@ -60,7 +60,7 @@ See [Installation](#installation) for Docker and from-source methods.
 
 The simplest method — no terminal, no JSON editing, no Node.js install required.
 
-1. Download `huntress-mcp.mcpb` from the [latest release](https://github.com/wyre-technology/huntress-mcp/releases/latest)
+1. Download `huntress-mcp.mcpb` from the [latest release](https://github.com/WYRE-AI/huntress-mcp/releases/latest)
 2. Open the file (double-click or drag into Claude Desktop)
 3. Enter your Huntress credentials when prompted (API Key, API Secret)
 
@@ -70,7 +70,7 @@ For **Claude Code (CLI)**, one command:
 claude mcp add huntress-mcp \
   -e HUNTRESS_API_KEY=your-api-key \
   -e HUNTRESS_API_SECRET=your-api-secret \
-  -- npx -y github:wyre-technology/huntress-mcp
+  -- npx -y github:WYRE-AI/huntress-mcp
 ```
 
 ### Option 2: Docker
@@ -86,13 +86,13 @@ docker run -d \
   -e HUNTRESS_API_KEY=your-key \
   -e HUNTRESS_API_SECRET=your-secret \
   -p 8080:8080 \
-  ghcr.io/wyre-technology/huntress-mcp:latest
+  ghcr.io/wyre-ai/huntress-mcp:latest
 ```
 
 ### Option 3: From Source
 
 ```bash
-git clone https://github.com/wyre-technology/huntress-mcp.git
+git clone https://github.com/WYRE-AI/huntress-mcp.git
 cd huntress-mcp
 npm ci
 npm run build

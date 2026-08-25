@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { HuntressClient } from '@wyre-technology/node-huntress';
+import { HuntressClient } from '@wyre-ai/node-huntress';
 import { logger } from './logger.js';
 
 export interface Credentials {
