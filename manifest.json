@@ -11,9 +11,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wyre-technology/huntress-mcp"
+    "url": "https://github.com/WYRE-AI/huntress-mcp"
   },
-  "homepage": "https://github.com/wyre-technology/huntress-mcp",
+  "homepage": "https://github.com/WYRE-AI/huntress-mcp",
   "license": "Apache-2.0",
   "keywords": ["huntress", "cybersecurity", "edr", "msp", "security", "incidents"],
   "server": {

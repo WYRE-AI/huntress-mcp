@@ -1,5 +1,5 @@
 {
-  "name": "huntress-mcp",
+  "name": "@wyre-ai/huntress-mcp",
   "version": "1.0.7",
   "description": "MCP server for the Huntress cybersecurity platform",
   "type": "module",

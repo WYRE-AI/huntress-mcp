@@ -1,18 +1,18 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.wyre-technology/huntress-mcp",
+  "name": "io.github.WYRE-AI/huntress-mcp",
   "title": "Huntress",
   "description": "MCP server for Huntress — accounts, organizations, agents, incidents, and reports.",
   "repository": {
-    "url": "https://github.com/wyre-technology/huntress-mcp",
+    "url": "https://github.com/WYRE-AI/huntress-mcp",
     "source": "github"
   },
   "version": "0.0.0",
-  "websiteUrl": "https://github.com/wyre-technology/huntress-mcp",
+  "websiteUrl": "https://github.com/WYRE-AI/huntress-mcp",
   "packages": [
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/wyre-technology/huntress-mcp:0.0.0",
+      "identifier": "ghcr.io/wyre-ai/huntress-mcp:0.0.0",
       "transport": {
         "type": "stdio"
       },
