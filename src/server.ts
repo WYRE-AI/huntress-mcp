@@ -81,7 +81,7 @@ export function createServer(): Server {
           text: JSON.stringify({
             connected: !!creds,
             domains: DOMAINS,
-            status: 'All tools available, no domain selected',
+            status: 'Call conduit__my_access to see which tools are available to you.',
           }, null, 2),
         }],
       };
@@ -106,7 +106,7 @@ export function createServer(): Server {
     }
 
     return {
-      content: [{ type: 'text' as const, text: `Unknown tool: ${name}. Use huntress_navigate to discover available tools.` }],
+      content: [{ type: 'text' as const, text: `Unknown tool: ${name}. Call conduit__my_access to see which tools are available to you.` }],
       isError: true,
     };
   });
