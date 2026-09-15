@@ -1,11 +1,19 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import {
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
+import { EXTENSION_ID } from '@modelcontextprotocol/ext-apps/server';
 import { getNavigationTools, DOMAINS } from './domains/navigation.js';
 import { getDomainHandler } from './domains/index.js';
 import { getCredentials } from './utils/client.js';
 import { logger } from './utils/logger.js';
 import type { CallToolResult, DomainName } from './utils/types.js';
 import { registerPromptHandlers } from './prompts.js';
+import { INCIDENT_CARD_RESOURCE_URI, MCP_APP_RESOURCE_MIME } from './incident-card.js';
+import { INCIDENT_CARD_HTML } from './generated/incident-card-html.js';
 
 // Belt-and-braces guard: never emit a content block whose text is not a
 // string. JSON.stringify(undefined) returns the VALUE undefined, so any
@@ -30,12 +38,50 @@ export function createServer(): Server {
         tools: {},
         logging: {},
         prompts: {},
+        resources: {},
+        // Explicit SEP-1865 (MCP Apps) capability negotiation: announce the
+        // io.modelcontextprotocol/ui extension so ext-apps clients see
+        // support for the ui:// incident card without relying solely on
+        // the client library inferring it from tool _meta.
+        extensions: { [EXTENSION_ID]: {} },
       },
     }
   );
 
   // Register prompt handlers
   registerPromptHandlers(server);
+
+  // MCP Apps (SEP-1865): the ui:// incident card is static HTML embedded at
+  // build time (src/generated/incident-card-html.ts), so it serves
+  // identically from stdio and Node HTTP without filesystem access.
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    return {
+      resources: [
+        {
+          uri: INCIDENT_CARD_RESOURCE_URI,
+          name: 'Huntress Incident Card',
+          description: 'Interactive MCP Apps card rendering a Huntress incident report',
+          mimeType: MCP_APP_RESOURCE_MIME,
+        },
+      ],
+    };
+  });
+
+  server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    const { uri } = request.params;
+    if (uri !== INCIDENT_CARD_RESOURCE_URI) {
+      throw new Error(`Unknown resource: ${uri}`);
+    }
+    return {
+      contents: [
+        {
+          uri,
+          mimeType: MCP_APP_RESOURCE_MIME,
+          text: INCIDENT_CARD_HTML,
+        },
+      ],
+    };
+  });
 
   // Return ALL tools upfront — navigation is a stateless help/discovery tool
   server.setRequestHandler(ListToolsRequestSchema, async () => {

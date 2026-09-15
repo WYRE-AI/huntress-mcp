@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+ui/dist/
 .env
 .env.*
 !.env.example
