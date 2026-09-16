@@ -35,7 +35,9 @@ function getTools(): Tool[] {
     {
       name: 'huntress_incidents_resolve',
       description: 'Resolve an incident report.',
-      _meta: INCIDENT_CARD_META,
+      // No _meta card link: this tool's result never carries a card payload
+      // (see the handler below) -- the card's own click handler updates the
+      // UI optimistically instead of relying on ontoolresult for this call.
       inputSchema: {
         type: 'object' as const,
         properties: { id: { type: 'number', description: 'Incident report ID' } },
@@ -146,7 +148,7 @@ async function handleCall(toolName: string, args: Record<string, unknown>): Prom
       // text summary below) — best-effort, a null card just omits the UI
       // surface without affecting the tool's data.
       const card = buildIncidentCard(report);
-      const summary = `Incident report ${report.id}: ${report.subject || '(no subject)'} — status: ${report.status}, severity: ${report.severity}.`;
+      const summary = `Incident report ${report.id}: ${report.subject || '(no subject)'} — status: ${report.status ?? 'unknown'}, severity: ${report.severity ?? 'unknown'}.`;
       return {
         content: [{ type: 'text', text: summary }],
         structuredContent: card ? { ...report, _card: card } : { ...report },

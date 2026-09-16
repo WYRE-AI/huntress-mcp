@@ -84,17 +84,25 @@ function render(c: IncidentCard): void {
     btn.id = 'resolve-btn';
     btn.addEventListener('click', async () => {
       if (!current?.canResolve) return;
+      // Capture which incident this click is resolving — `current` can be
+      // reassigned (e.g. a new ontoolresult for a different incident) while
+      // this request is in flight, and the update below must only apply if
+      // it's still resolving the incident it was asked to.
+      const requestedId = current.id;
       btn.disabled = true;
       btn.textContent = 'Resolving…';
       try {
         // The card already holds the incident id — resolving is the one
         // write action this card exposes.
-        await app.callServerTool({
+        const result = await app.callServerTool({
           name: 'huntress_incidents_resolve',
-          arguments: { id: current.id },
+          arguments: { id: requestedId },
         });
-        current = { ...current, status: 'Resolved', canResolve: false };
-        render(current);
+        if (result.isError) throw new Error('resolve failed');
+        if (current?.id === requestedId) {
+          current = { ...current, status: 'Resolved', canResolve: false };
+          render(current);
+        }
       } catch {
         btn.disabled = false;
         btn.textContent = 'Resolve incident';

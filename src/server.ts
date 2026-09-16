@@ -70,7 +70,7 @@ export function createServer(): Server {
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
     const { uri } = request.params;
     if (uri !== INCIDENT_CARD_RESOURCE_URI) {
-      throw new Error(`Unknown resource: ${uri}`);
+      throw new Error('Unknown resource');
     }
     return {
       contents: [

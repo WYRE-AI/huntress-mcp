@@ -38,7 +38,10 @@ vi.mock('@wyre-technology/node-huntress', () => ({
   },
 }));
 
-const RENDERABLE_TOOLS = ['huntress_incidents_get', 'huntress_incidents_resolve'];
+// huntress_incidents_resolve does not link to the card (its result never
+// carries a _card payload -- the resolve button updates the UI optimistically
+// instead), so it is not renderable.
+const RENDERABLE_TOOLS = ['huntress_incidents_get'];
 
 const openIncident = {
   id: 4242,
