@@ -144,10 +144,28 @@ function extractCard(result: unknown): IncidentCard | null {
   return card && typeof card.id === 'number' && card.title ? card : null;
 }
 
+/** Render a plain unavailable message in place of whatever #root currently shows. */
+function renderUnavailable(): void {
+  const root = document.getElementById('root')!;
+  root.replaceChildren(el('p', 'loading', 'Incident card unavailable for this result.'));
+}
+
 // Must be set before connect() so the initial tool-result isn't missed.
 app.ontoolresult = (result: unknown) => {
   const card = extractCard(result);
-  if (card) render(card);
+  if (card) {
+    render(card);
+  } else if (!current) {
+    // No card in this result, and nothing has rendered successfully yet —
+    // most likely the initial huntress_incidents_get call, where
+    // buildIncidentCard legitimately returned null (report missing a valid
+    // numeric id). Replace the permanent "Loading incident…" placeholder
+    // with an explicit unavailable state instead of leaving it stuck
+    // (CodeRabbit, huntress-mcp#69). A card-less result once `current` is
+    // already set is left alone — don't downgrade an already-rendered card
+    // because of an unrelated later notification with no card of its own.
+    renderUnavailable();
+  }
 };
 
 app.connect();
