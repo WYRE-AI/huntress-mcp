@@ -1,11 +1,9 @@
 /**
  * Handler-invocation tests for the organizations domain.
  *
- * Note: create/update/delete are marked HIGH-IMPACT / DESTRUCTIVE in their
- * tool descriptions and annotations, but the handler itself carries no
- * server-side confirm-or-abort guard (unlike e.g. alternative-payments-mcp's
- * archive-customer flow) -- these tests document the current (unguarded)
- * behavior, they don't assert a guard that doesn't exist.
+ * create/update/delete are marked HIGH-IMPACT / DESTRUCTIVE in their tool
+ * descriptions and annotations, and are now guarded by confirmOrAbort
+ * (elicitation/confirm.js) before the client call executes.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -16,6 +14,9 @@ const { mockClient } = vi.hoisted(() => {
   return { mockClient };
 });
 vi.mock('../../utils/client.js', () => ({ getClient: async () => mockClient }));
+
+const { mockConfirmOrAbort } = vi.hoisted(() => ({ mockConfirmOrAbort: vi.fn() }));
+vi.mock('../../elicitation/confirm.js', () => ({ confirmOrAbort: mockConfirmOrAbort }));
 
 import { organizationsHandler } from '../../domains/organizations.js';
 
@@ -47,6 +48,7 @@ describe('organizationsHandler.getTools', () => {
 describe('organizationsHandler.handleCall', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConfirmOrAbort.mockResolvedValue(null); // null => proceed
   });
 
   it('huntress_organizations_list forwards limit/page_token to the client', async () => {
@@ -61,6 +63,7 @@ describe('organizationsHandler.handleCall', () => {
       limit: 50,
       page_token: 'tok-a',
     });
+    expect(mockConfirmOrAbort).not.toHaveBeenCalled();
   });
 
   it('huntress_organizations_get fetches by numeric id and returns the raw org', async () => {
@@ -70,48 +73,100 @@ describe('organizationsHandler.handleCall', () => {
 
     expect(mockClient.organizations.get).toHaveBeenCalledWith(4);
     expect(parse(result)).toEqual({ id: 4, name: 'Contoso' });
+    expect(mockConfirmOrAbort).not.toHaveBeenCalled();
   });
 
-  it('huntress_organizations_create sends only name/key, dropping unrelated args', async () => {
-    mockClient.organizations.create.mockResolvedValue({ id: 10, name: 'NewCo' });
+  describe('huntress_organizations_create (destructive, confirm-guarded)', () => {
+    it('creates and returns the raw org when confirmed', async () => {
+      mockClient.organizations.create.mockResolvedValue({ id: 10, name: 'NewCo' });
 
-    const result = await organizationsHandler.handleCall('huntress_organizations_create', {
-      name: 'NewCo',
-      key: 'newco-key',
-      unexpected: 'ignored',
+      const result = await organizationsHandler.handleCall('huntress_organizations_create', {
+        name: 'NewCo',
+        key: 'newco-key',
+        unexpected: 'ignored',
+      });
+
+      expect(mockConfirmOrAbort).toHaveBeenCalledWith('Create organization "NewCo"?');
+      expect(mockClient.organizations.create).toHaveBeenCalledWith({
+        name: 'NewCo',
+        key: 'newco-key',
+      });
+      expect(parse(result)).toEqual({ id: 10, name: 'NewCo' });
     });
 
-    expect(mockClient.organizations.create).toHaveBeenCalledWith({
-      name: 'NewCo',
-      key: 'newco-key',
+    it('does NOT call create and returns the abort result when not confirmed', async () => {
+      const abortResult = {
+        content: [{ type: 'text' as const, text: 'Aborted: not confirmed by the user.' }],
+        isError: true,
+      };
+      mockConfirmOrAbort.mockResolvedValue(abortResult);
+
+      const result = await organizationsHandler.handleCall('huntress_organizations_create', {
+        name: 'NewCo',
+        key: 'newco-key',
+      });
+
+      expect(mockClient.organizations.create).not.toHaveBeenCalled();
+      expect(result).toBe(abortResult);
     });
-    expect(parse(result)).toEqual({ id: 10, name: 'NewCo' });
   });
 
-  it('huntress_organizations_update sends id plus only the update fields', async () => {
-    mockClient.organizations.update.mockResolvedValue({ id: 4, name: 'Contoso Ltd' });
+  describe('huntress_organizations_update (destructive, confirm-guarded)', () => {
+    it('updates and sends id plus only the update fields when confirmed', async () => {
+      mockClient.organizations.update.mockResolvedValue({ id: 4, name: 'Contoso Ltd' });
 
-    await organizationsHandler.handleCall('huntress_organizations_update', {
-      id: 4,
-      name: 'Contoso Ltd',
-      report_recipients: ['a@example.com'],
+      await organizationsHandler.handleCall('huntress_organizations_update', {
+        id: 4,
+        name: 'Contoso Ltd',
+        report_recipients: ['a@example.com'],
+      });
+
+      expect(mockConfirmOrAbort).toHaveBeenCalledWith('Update organization 4?');
+      expect(mockClient.organizations.update).toHaveBeenCalledWith(4, {
+        name: 'Contoso Ltd',
+        key: undefined,
+        report_recipients: ['a@example.com'],
+      });
     });
 
-    expect(mockClient.organizations.update).toHaveBeenCalledWith(4, {
-      name: 'Contoso Ltd',
-      key: undefined,
-      report_recipients: ['a@example.com'],
+    it('does NOT call update and returns the abort result when not confirmed', async () => {
+      const abortResult = {
+        content: [{ type: 'text' as const, text: 'Aborted: not confirmed by the user.' }],
+        isError: true,
+      };
+      mockConfirmOrAbort.mockResolvedValue(abortResult);
+
+      const result = await organizationsHandler.handleCall('huntress_organizations_update', { id: 4, name: 'X' });
+
+      expect(mockClient.organizations.update).not.toHaveBeenCalled();
+      expect(result).toBe(abortResult);
     });
   });
 
-  it('huntress_organizations_delete deletes by id and returns a confirmation message with no guard', async () => {
-    mockClient.organizations.delete.mockResolvedValue(undefined);
+  describe('huntress_organizations_delete (destructive, confirm-guarded)', () => {
+    it('deletes by id and returns a confirmation message when confirmed', async () => {
+      mockClient.organizations.delete.mockResolvedValue(undefined);
 
-    const result = await organizationsHandler.handleCall('huntress_organizations_delete', { id: 7 });
+      const result = await organizationsHandler.handleCall('huntress_organizations_delete', { id: 7 });
 
-    expect(mockClient.organizations.delete).toHaveBeenCalledWith(7);
-    expect(result.content[0].text).toBe('Organization 7 deleted.');
-    expect(result.isError).toBeUndefined();
+      expect(mockConfirmOrAbort).toHaveBeenCalledWith('Permanently delete organization 7? This cannot be undone.');
+      expect(mockClient.organizations.delete).toHaveBeenCalledWith(7);
+      expect(result.content[0].text).toBe('Organization 7 deleted.');
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('does NOT call delete and returns the abort result when not confirmed', async () => {
+      const abortResult = {
+        content: [{ type: 'text' as const, text: 'Aborted: not confirmed by the user.' }],
+        isError: true,
+      };
+      mockConfirmOrAbort.mockResolvedValue(abortResult);
+
+      const result = await organizationsHandler.handleCall('huntress_organizations_delete', { id: 7 });
+
+      expect(mockClient.organizations.delete).not.toHaveBeenCalled();
+      expect(result).toBe(abortResult);
+    });
   });
 
   it('returns an isError result for an unknown tool name', async () => {

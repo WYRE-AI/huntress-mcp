@@ -2,6 +2,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { DomainHandler, CallToolResult } from '../utils/types.js';
 import { getClient } from '../utils/client.js';
 import { logger } from '../utils/logger.js';
+import { confirmOrAbort } from '../elicitation/confirm.js';
 
 function getTools(): Tool[] {
   return [
@@ -114,6 +115,8 @@ async function handleCall(toolName: string, args: Record<string, unknown>): Prom
       return { content: [{ type: 'text', text: JSON.stringify(org, null, 2) }] };
     }
     case 'huntress_organizations_create': {
+      const aborted = await confirmOrAbort(`Create organization "${args.name as string}"?`);
+      if (aborted) return aborted;
       logger.info('API call: organizations.create', { name: args.name });
       const org = await client.organizations.create({
         name: args.name as string,
@@ -123,6 +126,8 @@ async function handleCall(toolName: string, args: Record<string, unknown>): Prom
     }
     case 'huntress_organizations_update': {
       const id = args.id as number;
+      const aborted = await confirmOrAbort(`Update organization ${id}?`);
+      if (aborted) return aborted;
       logger.info('API call: organizations.update', { id });
       const org = await client.organizations.update(id, {
         name: args.name as string | undefined,
@@ -133,6 +138,8 @@ async function handleCall(toolName: string, args: Record<string, unknown>): Prom
     }
     case 'huntress_organizations_delete': {
       const id = args.id as number;
+      const aborted = await confirmOrAbort(`Permanently delete organization ${id}? This cannot be undone.`);
+      if (aborted) return aborted;
       logger.info('API call: organizations.delete', { id });
       await client.organizations.delete(id);
       return { content: [{ type: 'text', text: `Organization ${id} deleted.` }] };

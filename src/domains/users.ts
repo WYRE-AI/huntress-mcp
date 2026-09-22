@@ -2,6 +2,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { DomainHandler, CallToolResult } from '../utils/types.js';
 import { getClient } from '../utils/client.js';
 import { logger } from '../utils/logger.js';
+import { confirmOrAbort } from '../elicitation/confirm.js';
 
 const PERMISSIONS = ['Admin', 'Security Engineer', 'User', 'Read-only', 'Finance', 'Marketing'];
 
@@ -118,6 +119,10 @@ async function handleCall(toolName: string, args: Record<string, unknown>): Prom
       return { content: [{ type: 'text', text: JSON.stringify(membership, null, 2) }] };
     }
     case 'huntress_users_create': {
+      const aborted = await confirmOrAbort(
+        `Invite ${args.email as string} with ${args.permissions as string} permissions?`
+      );
+      if (aborted) return aborted;
       logger.info('API call: memberships.create', { email: args.email });
       const membership = await client.memberships.create({
         email: args.email as string,
@@ -130,6 +135,10 @@ async function handleCall(toolName: string, args: Record<string, unknown>): Prom
     }
     case 'huntress_users_update': {
       const id = args.id as number;
+      const aborted = await confirmOrAbort(
+        `Change membership ${id}'s permissions to ${args.permissions as string}?`
+      );
+      if (aborted) return aborted;
       logger.info('API call: memberships.update', { id });
       const membership = await client.memberships.update(id, {
         permissions: args.permissions as any,
@@ -138,6 +147,8 @@ async function handleCall(toolName: string, args: Record<string, unknown>): Prom
     }
     case 'huntress_users_delete': {
       const id = args.id as number;
+      const aborted = await confirmOrAbort(`Permanently delete membership ${id}? This cannot be undone.`);
+      if (aborted) return aborted;
       logger.info('API call: memberships.delete', { id });
       await client.memberships.delete(id);
       return { content: [{ type: 'text', text: `Membership ${id} deleted.` }] };

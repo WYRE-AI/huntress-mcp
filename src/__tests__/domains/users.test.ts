@@ -1,9 +1,9 @@
 /**
  * Handler-invocation tests for the users (membership) domain.
  *
- * Same note as organizations.test.ts: create/update/delete are marked
- * HIGH-IMPACT / DESTRUCTIVE in their descriptions, but the handler carries
- * no server-side confirm-or-abort guard -- documented, not asserted as safe.
+ * create/update/delete are marked HIGH-IMPACT / DESTRUCTIVE in their tool
+ * descriptions and annotations, and are now guarded by confirmOrAbort
+ * (elicitation/confirm.js) before the client call executes.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -14,6 +14,9 @@ const { mockClient } = vi.hoisted(() => {
   return { mockClient };
 });
 vi.mock('../../utils/client.js', () => ({ getClient: async () => mockClient }));
+
+const { mockConfirmOrAbort } = vi.hoisted(() => ({ mockConfirmOrAbort: vi.fn() }));
+vi.mock('../../elicitation/confirm.js', () => ({ confirmOrAbort: mockConfirmOrAbort }));
 
 import { usersHandler } from '../../domains/users.js';
 
@@ -45,6 +48,7 @@ describe('usersHandler.getTools', () => {
 describe('usersHandler.handleCall', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockConfirmOrAbort.mockResolvedValue(null); // null => proceed
   });
 
   it('huntress_users_list forwards limit/page_token/organization_id to the client', async () => {
@@ -57,6 +61,7 @@ describe('usersHandler.handleCall', () => {
       page_token: undefined,
       organization_id: 3,
     });
+    expect(mockConfirmOrAbort).not.toHaveBeenCalled();
   });
 
   it('huntress_users_get fetches by numeric id and returns the raw membership', async () => {
@@ -66,45 +71,101 @@ describe('usersHandler.handleCall', () => {
 
     expect(mockClient.memberships.get).toHaveBeenCalledWith(6);
     expect(parse(result)).toEqual({ id: 6, permissions: 'Admin' });
+    expect(mockConfirmOrAbort).not.toHaveBeenCalled();
   });
 
-  it('huntress_users_create sends the invite payload including permissions and org scope', async () => {
-    mockClient.memberships.create.mockResolvedValue({ id: 11, email: 'new@example.com' });
+  describe('huntress_users_create (destructive, confirm-guarded)', () => {
+    it('sends the invite payload including permissions and org scope when confirmed', async () => {
+      mockClient.memberships.create.mockResolvedValue({ id: 11, email: 'new@example.com' });
 
-    const result = await usersHandler.handleCall('huntress_users_create', {
-      email: 'new@example.com',
-      first_name: 'New',
-      last_name: 'User',
-      permissions: 'Security Engineer',
-      organization_id: 3,
+      const result = await usersHandler.handleCall('huntress_users_create', {
+        email: 'new@example.com',
+        first_name: 'New',
+        last_name: 'User',
+        permissions: 'Security Engineer',
+        organization_id: 3,
+      });
+
+      expect(mockConfirmOrAbort).toHaveBeenCalledWith(
+        'Invite new@example.com with Security Engineer permissions?'
+      );
+      expect(mockClient.memberships.create).toHaveBeenCalledWith({
+        email: 'new@example.com',
+        first_name: 'New',
+        last_name: 'User',
+        permissions: 'Security Engineer',
+        organization_id: 3,
+      });
+      expect(parse(result)).toEqual({ id: 11, email: 'new@example.com' });
     });
 
-    expect(mockClient.memberships.create).toHaveBeenCalledWith({
-      email: 'new@example.com',
-      first_name: 'New',
-      last_name: 'User',
-      permissions: 'Security Engineer',
-      organization_id: 3,
+    it('does NOT call create and returns the abort result when not confirmed', async () => {
+      const abortResult = {
+        content: [{ type: 'text' as const, text: 'Aborted: not confirmed by the user.' }],
+        isError: true,
+      };
+      mockConfirmOrAbort.mockResolvedValue(abortResult);
+
+      const result = await usersHandler.handleCall('huntress_users_create', {
+        email: 'new@example.com',
+        first_name: 'New',
+        last_name: 'User',
+        permissions: 'Admin',
+      });
+
+      expect(mockClient.memberships.create).not.toHaveBeenCalled();
+      expect(result).toBe(abortResult);
     });
-    expect(parse(result)).toEqual({ id: 11, email: 'new@example.com' });
   });
 
-  it('huntress_users_update sends id plus only the new permission level', async () => {
-    mockClient.memberships.update.mockResolvedValue({ id: 6, permissions: 'User' });
+  describe('huntress_users_update (destructive, confirm-guarded)', () => {
+    it('sends id plus only the new permission level when confirmed', async () => {
+      mockClient.memberships.update.mockResolvedValue({ id: 6, permissions: 'User' });
 
-    await usersHandler.handleCall('huntress_users_update', { id: 6, permissions: 'User' });
+      await usersHandler.handleCall('huntress_users_update', { id: 6, permissions: 'User' });
 
-    expect(mockClient.memberships.update).toHaveBeenCalledWith(6, { permissions: 'User' });
+      expect(mockConfirmOrAbort).toHaveBeenCalledWith("Change membership 6's permissions to User?");
+      expect(mockClient.memberships.update).toHaveBeenCalledWith(6, { permissions: 'User' });
+    });
+
+    it('does NOT call update and returns the abort result when not confirmed', async () => {
+      const abortResult = {
+        content: [{ type: 'text' as const, text: 'Aborted: not confirmed by the user.' }],
+        isError: true,
+      };
+      mockConfirmOrAbort.mockResolvedValue(abortResult);
+
+      const result = await usersHandler.handleCall('huntress_users_update', { id: 6, permissions: 'Admin' });
+
+      expect(mockClient.memberships.update).not.toHaveBeenCalled();
+      expect(result).toBe(abortResult);
+    });
   });
 
-  it('huntress_users_delete deletes by id and returns a confirmation message with no guard', async () => {
-    mockClient.memberships.delete.mockResolvedValue(undefined);
+  describe('huntress_users_delete (destructive, confirm-guarded)', () => {
+    it('deletes by id and returns a confirmation message when confirmed', async () => {
+      mockClient.memberships.delete.mockResolvedValue(undefined);
 
-    const result = await usersHandler.handleCall('huntress_users_delete', { id: 6 });
+      const result = await usersHandler.handleCall('huntress_users_delete', { id: 6 });
 
-    expect(mockClient.memberships.delete).toHaveBeenCalledWith(6);
-    expect(result.content[0].text).toBe('Membership 6 deleted.');
-    expect(result.isError).toBeUndefined();
+      expect(mockConfirmOrAbort).toHaveBeenCalledWith('Permanently delete membership 6? This cannot be undone.');
+      expect(mockClient.memberships.delete).toHaveBeenCalledWith(6);
+      expect(result.content[0].text).toBe('Membership 6 deleted.');
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('does NOT call delete and returns the abort result when not confirmed', async () => {
+      const abortResult = {
+        content: [{ type: 'text' as const, text: 'Aborted: not confirmed by the user.' }],
+        isError: true,
+      };
+      mockConfirmOrAbort.mockResolvedValue(abortResult);
+
+      const result = await usersHandler.handleCall('huntress_users_delete', { id: 6 });
+
+      expect(mockClient.memberships.delete).not.toHaveBeenCalled();
+      expect(result).toBe(abortResult);
+    });
   });
 
   it('returns an isError result for an unknown tool name', async () => {
