@@ -38,19 +38,19 @@
     "@wyre-technology/node-huntress": "^1.0.4"
   },
   "devDependencies": {
-    "@modelcontextprotocol/ext-apps": "^1.7.5",
+    "@modelcontextprotocol/ext-apps": "^2.0.3",
     "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/git": "^11.0.1",
-    "@semantic-release/github": "^12.0.9",
-    "@semantic-release/npm": "^13.1.4",
-    "@types/node": "^26.2.0",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@semantic-release/github": "^12.0.10",
+    "@semantic-release/npm": "^13.2.0",
+    "@types/node": "^26.6.4",
+    "@vitest/coverage-v8": "^5.0.3",
     "semantic-release": "^25.0.9",
     "tsup": "^8.0.0",
     "typescript": "^6.0.3",
-    "vite": "^8.2.2",
+    "vite": "^8.3.2",
     "vite-plugin-singlefile": "^2.1.0",
-    "vitest": "^4.1.9"
+    "vitest": "^5.0.3"
   },
   "engines": {
     "node": ">=20.0.0"
