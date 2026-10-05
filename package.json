@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "build:ui": "vite build && node scripts/embed-ui.mjs",
     "prebuild": "npm run clean",
     "dev": "tsup --watch",
     "start": "node dist/index.js",
@@ -37,6 +38,7 @@
     "@wyre-technology/node-huntress": "^1.0.4"
   },
   "devDependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.7.5",
     "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/git": "^11.0.1",
     "@semantic-release/github": "^12.0.9",
@@ -46,6 +48,8 @@
     "semantic-release": "^25.0.9",
     "tsup": "^8.0.0",
     "typescript": "^6.0.3",
+    "vite": "^8.2.2",
+    "vite-plugin-singlefile": "^2.1.0",
     "vitest": "^4.1.9"
   },
   "engines": {

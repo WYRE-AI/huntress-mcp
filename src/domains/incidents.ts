@@ -2,6 +2,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { DomainHandler, CallToolResult } from '../utils/types.js';
 import { getClient } from '../utils/client.js';
 import { logger } from '../utils/logger.js';
+import { INCIDENT_CARD_META, buildIncidentCard } from '../incident-card.js';
 
 function getTools(): Tool[] {
   return [
@@ -24,6 +25,7 @@ function getTools(): Tool[] {
     {
       name: 'huntress_incidents_get',
       description: 'Get incident report by ID.',
+      _meta: INCIDENT_CARD_META,
       inputSchema: {
         type: 'object' as const,
         properties: { id: { type: 'number', description: 'Incident report ID' } },
@@ -33,6 +35,9 @@ function getTools(): Tool[] {
     {
       name: 'huntress_incidents_resolve',
       description: 'Resolve an incident report.',
+      // No _meta card link: this tool's result never carries a card payload
+      // (see the handler below) -- the card's own click handler updates the
+      // UI optimistically instead of relying on ontoolresult for this call.
       inputSchema: {
         type: 'object' as const,
         properties: { id: { type: 'number', description: 'Incident report ID' } },
@@ -138,7 +143,16 @@ async function handleCall(toolName: string, args: Record<string, unknown>): Prom
       const id = args.id as number;
       logger.info('API call: incidentReports.get', { id });
       const report = await client.incidentReports.get(id);
-      return { content: [{ type: 'text', text: JSON.stringify(report, null, 2) }] };
+      // MCP Apps: attach the normalized card the ui:// incident card
+      // renders from via structuredContent (kept separate from the plain
+      // text summary below) — best-effort, a null card just omits the UI
+      // surface without affecting the tool's data.
+      const card = buildIncidentCard(report);
+      const summary = `Incident report ${report.id}: ${report.subject || '(no subject)'} — status: ${report.status ?? 'unknown'}, severity: ${report.severity ?? 'unknown'}.`;
+      return {
+        content: [{ type: 'text', text: summary }],
+        structuredContent: card ? { ...report, _card: card } : { ...report },
+      };
     }
     case 'huntress_incidents_resolve': {
       const id = args.id as number;
