@@ -34,7 +34,7 @@
   "author": "WYRE Technology",
   "license": "Apache-2.0",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "@wyre-technology/node-huntress": "^1.0.4"
   },
   "devDependencies": {
