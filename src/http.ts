@@ -4,6 +4,7 @@ import { createServer } from './server.js';
 import { getCredentials, runWithCredentials } from './utils/client.js';
 import { logger } from './utils/logger.js';
 import { verifyS2sHeader, S2S_HEADER } from './s2s-verify.js';
+import { runWithServerRef } from './utils/server-ref.js';
 
 const S2S_SECRET = process.env.CONDUIT_S2S_SECRET || '';
 
@@ -72,8 +73,10 @@ function startHttpServer(): void {
         enableJsonResponse: true,
       });
       res.on('close', () => { transport.close(); server.close(); });
-      await server.connect(transport);
-      await transport.handleRequest(req, res);
+      await runWithServerRef(server, async () => {
+        await server.connect(transport);
+        await transport.handleRequest(req, res);
+      });
     };
 
     if (apiKey && apiSecret) {
