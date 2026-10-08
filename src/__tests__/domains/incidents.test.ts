@@ -66,7 +66,13 @@ describe('incidentsHandler.handleCall', () => {
     const result = await incidentsHandler.handleCall('huntress_incidents_get', { id: 3 });
 
     expect(mockClient.incidentReports.get).toHaveBeenCalledWith(3);
-    expect(parse(result)).toEqual({ id: 3, status: 'open' });
+    // content[0].text is a human-readable summary since #69 (MCP Apps incident
+    // card); the raw report data lives in structuredContent instead.
+    expect(result.content[0].text).toContain('Incident report 3');
+    expect((result as { structuredContent: unknown }).structuredContent).toMatchObject({
+      id: 3,
+      status: 'open',
+    });
   });
 
   it('huntress_incidents_resolve resolves by id with no confirmation guard', async () => {
