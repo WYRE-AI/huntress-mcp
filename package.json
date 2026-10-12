@@ -48,7 +48,7 @@
     "semantic-release": "^25.0.9",
     "tsup": "^8.0.0",
     "typescript": "^6.0.3",
-    "vite": "^8.3.2",
+    "vite": "^8.3.4",
     "vite-plugin-singlefile": "^2.1.0",
     "vitest": "^5.0.3"
   },
