@@ -1,5 +1,10 @@
 
 services:
+  # Gateway mode. API key and secret arrive per request on X-Huntress-* headers.
+  # Do not set HUNTRESS_API_KEY, HUNTRESS_API_SECRET, or env_file here — that
+  # would put static vendor credentials in the container. The project .env is
+  # used only for Compose interpolation of CONDUIT_S2S_SECRET. For AUTH_MODE=env,
+  # pass HUNTRESS_API_KEY and HUNTRESS_API_SECRET on that process instead (see the README).
   huntress-mcp:
     build:
       context: .
@@ -8,24 +13,21 @@ services:
     image: huntress-mcp:latest
     container_name: huntress-mcp-server
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
-      # Required Huntress credentials (set these in .env file)
-      - HUNTRESS_API_KEY=${HUNTRESS_API_KEY}
-      - HUNTRESS_API_SECRET=${HUNTRESS_API_SECRET}
-      
       # Optional configuration
       - MCP_SERVER_NAME=${MCP_SERVER_NAME:-huntress-mcp}
       - MCP_SERVER_VERSION=${MCP_SERVER_VERSION:-1.0.0}
-      
+
       # Logging configuration
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - NODE_ENV=production
       - MCP_TRANSPORT=http
       - MCP_HTTP_PORT=8080
+      - MCP_HTTP_HOST=0.0.0.0
+      - AUTH_MODE=gateway
+      - CONDUIT_S2S_SECRET=${CONDUIT_S2S_SECRET:?set CONDUIT_S2S_SECRET}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       # Mount logs directory for persistence
       - huntress-mcp-logs:/app/logs
